@@ -1,0 +1,23 @@
+# Ambientes virtuais e Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Variáveis de ambiente (Segurança)
+.env
+
+# Banco de dados e diretório de dados locais
+data/
+*.db
+*.sqlite
+
+# Sistema operacional (Lixo eletrônico)
+.DS_Store
+Thumbs.db
+
+# Arquivos de IDE (Opcional)
+.vscode/
+.idea/

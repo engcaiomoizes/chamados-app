@@ -1,0 +1,22 @@
+services:
+  chamados-app:
+    build: .
+    container_name: chamados_app
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+  
+  sqlite-admin:
+    image: coleifer/sqlite-web
+    container_name: chamados_sqlite_admin
+    restart: always
+    ports:
+      - "8084:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - SQLITE_DATABASE=chamados.db
+    depends_on:
+      - chamados-app

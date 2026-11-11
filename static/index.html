@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>TI Command Center</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+    </head>
+    <body
+        class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans"
+    >
+        <!-- Modal / Overlay de Login -->
+        <div
+            id="login-overlay"
+            class="fixed inset-0 bg-slate-950 flex justify-center items-center p-4 z-[100] hidden"
+        >
+            <div
+                class="bg-slate-900 border border-slate-800 rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl"
+            >
+                <div class="text-center space-y-2">
+                    <div
+                        class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-xl flex items-center justify-center mx-auto border border-blue-500/30"
+                    >
+                        <i class="fa-solid fa-lock text-xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-white">
+                        TI Command Center
+                    </h2>
+                    <p class="text-xs text-slate-400">
+                        Entre com suas credenciais para acessar
+                    </p>
+                </div>
+
+                <form id="form-login" class="space-y-4">
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-400 mb-1"
+                            >Usuário</label
+                        >
+                        <input
+                            type="text"
+                            id="login-user"
+                            required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-400 mb-1"
+                            >Senha</label
+                        >
+                        <input
+                            type="password"
+                            id="login-pass"
+                            required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                        />
+                    </div>
+                    <p
+                        id="login-error"
+                        class="text-xs text-red-400 hidden text-center"
+                    ></p>
+                    <button
+                        type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-sm transition-colors"
+                    >
+                        Entrar
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="bg-slate-900 border-b border-slate-800 px-6 py-4">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30"
+                    >
+                        <i class="fa-solid fa-server text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight">
+                            TI Command Center
+                        </h1>
+                        <p class="text-xs text-slate-400">
+                            Painel Operacional & Gestão de Prioridades
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <span
+                        id="user-display"
+                        class="text-xs text-slate-400 font-medium"
+                    ></span>
+                    <button
+                        onclick="logout()"
+                        class="text-slate-400 hover:text-red-400 text-xs flex items-center gap-1"
+                    >
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair
+                    </button>
+                    <button
+                        onclick="openModal()"
+                        class="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all"
+                    >
+                        <i class="fa-solid fa-plus"></i> Novo Chamado
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main
+            class="max-w-7xl mx-auto w-full p-6 space-y-6 flex-1 flex flex-col"
+        >
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div
+                    class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center"
+                >
+                    <div>
+                        <p class="text-xs font-medium text-slate-400">
+                            Total de Chamados
+                        </p>
+                        <p
+                            id="kpi-total"
+                            class="text-2xl font-bold text-white mt-1"
+                        >
+                            0
+                        </p>
+                    </div>
+                    <i class="fa-solid fa-ticket text-slate-600 text-2xl"></i>
+                </div>
+                <div
+                    class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center"
+                >
+                    <div>
+                        <p class="text-xs font-medium text-slate-400">
+                            P1 - Críticos
+                        </p>
+                        <p
+                            id="kpi-criticos"
+                            class="text-2xl font-bold text-red-400 mt-1"
+                        >
+                            0
+                        </p>
+                    </div>
+                    <i
+                        class="fa-solid fa-triangle-exclamation text-red-500/50 text-2xl"
+                    ></i>
+                </div>
+                <div
+                    class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center"
+                >
+                    <div>
+                        <p class="text-xs font-medium text-slate-400">
+                            Em Andamento
+                        </p>
+                        <p
+                            id="kpi-andamento"
+                            class="text-2xl font-bold text-yellow-400 mt-1"
+                        >
+                            0
+                        </p>
+                    </div>
+                    <i
+                        class="fa-solid fa-spinner text-yellow-500/50 text-2xl"
+                    ></i>
+                </div>
+                <div
+                    class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center"
+                >
+                    <div>
+                        <p class="text-xs font-medium text-slate-400">
+                            Concluídos
+                        </p>
+                        <p
+                            id="kpi-concluidos"
+                            class="text-2xl font-bold text-green-400 mt-1"
+                        >
+                            0
+                        </p>
+                    </div>
+                    <i
+                        class="fa-solid fa-check-circle text-green-500/50 text-2xl"
+                    ></i>
+                </div>
+            </div>
+
+            <!-- Filtros e Busca -->
+            <div
+                class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap gap-4 items-center justify-between"
+            >
+                <div class="flex-1 min-w-[240px] relative">
+                    <i
+                        class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-sm"
+                    ></i>
+                    <input
+                        type="text"
+                        id="search-input"
+                        oninput="render()"
+                        placeholder="Buscar por título, solicitante ou ID..."
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    />
+                </div>
+                <div class="flex gap-3">
+                    <select
+                        id="filter-category"
+                        onchange="render()"
+                        class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none"
+                    >
+                        <option value="">Todas as Categorias</option>
+                        <option value="Redes">Redes</option>
+                        <option value="Hardware">Hardware</option>
+                        <option value="Sistemas">Sistemas</option>
+                        <option value="Acessos">Acessos</option>
+                    </select>
+                    <select
+                        id="filter-status"
+                        onchange="render()"
+                        class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none"
+                    >
+                        <option value="">Todos os Status</option>
+                        <option value="Aberto">Aberto</option>
+                        <option value="Em Andamento">Em Andamento</option>
+                        <option value="Concluído">Concluído</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Quadros Kanban por Prioridade -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+                <!-- P1 - Crítica -->
+                <div
+                    class="bg-slate-900/60 rounded-xl p-4 border border-red-500/20 flex flex-col"
+                >
+                    <div
+                        class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800"
+                    >
+                        <h2
+                            class="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-2"
+                        >
+                            <span
+                                class="w-2 h-2 rounded-full bg-red-500 animate-pulse"
+                            ></span>
+                            P1 - Crítica
+                        </h2>
+                        <span
+                            id="count-Critica"
+                            class="bg-red-500/10 text-red-400 text-xs px-2 py-0.5 rounded font-bold"
+                            >0</span
+                        >
+                    </div>
+                    <div
+                        id="col-Critica"
+                        class="space-y-3 overflow-y-auto flex-1"
+                    ></div>
+                </div>
+
+                <!-- P2 - Alta -->
+                <div
+                    class="bg-slate-900/60 rounded-xl p-4 border border-orange-500/20 flex flex-col"
+                >
+                    <div
+                        class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800"
+                    >
+                        <h2
+                            class="text-xs font-bold text-orange-400 uppercase tracking-wider flex items-center gap-2"
+                        >
+                            <span
+                                class="w-2 h-2 rounded-full bg-orange-500"
+                            ></span>
+                            P2 - Alta
+                        </h2>
+                        <span
+                            id="count-Alta"
+                            class="bg-orange-500/10 text-orange-400 text-xs px-2 py-0.5 rounded font-bold"
+                            >0</span
+                        >
+                    </div>
+                    <div
+                        id="col-Alta"
+                        class="space-y-3 overflow-y-auto flex-1"
+                    ></div>
+                </div>
+
+                <!-- P3 - Média -->
+                <div
+                    class="bg-slate-900/60 rounded-xl p-4 border border-yellow-500/20 flex flex-col"
+                >
+                    <div
+                        class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800"
+                    >
+                        <h2
+                            class="text-xs font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-2"
+                        >
+                            <span
+                                class="w-2 h-2 rounded-full bg-yellow-500"
+                            ></span>
+                            P3 - Média
+                        </h2>
+                        <span
+                            id="count-Media"
+                            class="bg-yellow-500/10 text-yellow-400 text-xs px-2 py-0.5 rounded font-bold"
+                            >0</span
+                        >
+                    </div>
+                    <div
+                        id="col-Media"
+                        class="space-y-3 overflow-y-auto flex-1"
+                    ></div>
+                </div>
+
+                <!-- P4 - Baixa -->
+                <div
+                    class="bg-slate-900/60 rounded-xl p-4 border border-green-500/20 flex flex-col"
+                >
+                    <div
+                        class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800"
+                    >
+                        <h2
+                            class="text-xs font-bold text-green-400 uppercase tracking-wider flex items-center gap-2"
+                        >
+                            <span
+                                class="w-2 h-2 rounded-full bg-green-500"
+                            ></span>
+                            P4 - Baixa
+                        </h2>
+                        <span
+                            id="count-Baixa"
+                            class="bg-green-500/10 text-green-400 text-xs px-2 py-0.5 rounded font-bold"
+                            >0</span
+                        >
+                    </div>
+                    <div
+                        id="col-Baixa"
+                        class="space-y-3 overflow-y-auto flex-1"
+                    ></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal de Novo / Editar Chamado -->
+        <div
+            id="modal-chamado"
+            class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden justify-center items-center p-4 z-50"
+        >
+            <div
+                class="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl"
+            >
+                <div
+                    class="flex justify-between items-center border-b border-slate-800 pb-3"
+                >
+                    <h3 id="modal-title" class="font-bold text-lg text-white">
+                        Novo Chamado de TI
+                    </h3>
+                    <button
+                        onclick="closeModal()"
+                        class="text-slate-400 hover:text-white"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <form id="form-chamado" class="space-y-4">
+                    <input type="hidden" id="chamado-id" />
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-400 mb-1"
+                            >Título Resumido *</label
+                        >
+                        <input
+                            type="text"
+                            id="title"
+                            required
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-slate-400 mb-1"
+                            >Descrição Detalhada</label
+                        >
+                        <textarea
+                            id="description"
+                            rows="3"
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                        ></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-slate-400 mb-1"
+                                >Solicitante *</label
+                            >
+                            <input
+                                type="text"
+                                id="requester"
+                                required
+                                placeholder="Ex: João da Silva"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-slate-400 mb-1"
+                                >Atribuído a</label
+                            >
+                            <input
+                                type="text"
+                                id="assigned_to"
+                                placeholder="Ex: Suporte N1"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-slate-400 mb-1"
+                                >Categoria *</label
+                            >
+                            <select
+                                id="category"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="Redes">Redes</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Sistemas">Sistemas</option>
+                                <option value="Acessos">Acessos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-slate-400 mb-1"
+                                >Prioridade *</label
+                            >
+                            <select
+                                id="priority"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="Critica">P1 - Crítica</option>
+                                <option value="Alta">P2 - Alta</option>
+                                <option value="Media" selected>
+                                    P3 - Média
+                                </option>
+                                <option value="Baixa">P4 - Baixa</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-slate-400 mb-1"
+                                >SLA *</label
+                            >
+                            <select
+                                id="sla"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="1h">1 hora</option>
+                                <option value="4h" selected>4 horas</option>
+                                <option value="12h">12 horas</option>
+                                <option value="24h">24 horas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex justify-end gap-3 pt-3 border-t border-slate-800"
+                    >
+                        <button
+                            type="button"
+                            onclick="closeModal()"
+                            class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-sm"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg text-sm"
+                        >
+                            Salvar Chamado
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Registrar Solução -->
+        <div
+            id="modal-solucao"
+            class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden justify-center items-center p-4 z-50"
+        >
+            <div
+                class="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl"
+            >
+                <div
+                    class="flex justify-between items-center border-b border-slate-800 pb-3"
+                >
+                    <h3 class="font-bold text-lg text-white">
+                        <i
+                            class="fa-solid fa-circle-check text-green-500 mr-2"
+                        ></i>
+                        Registrar Solução
+                    </h3>
+                    <button
+                        onclick="closeSolucaoModal()"
+                        class="text-slate-400 hover:text-white"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-400">
+                    Informe como o problema foi resolvido para encerrar o
+                    chamado:
+                </p>
+                <input type="hidden" id="solucao-chamado-id" />
+                <div>
+                    <textarea
+                        id="solution-text"
+                        rows="4"
+                        placeholder="Descreva a solução aplicada..."
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm focus:outline-none focus:border-green-500 text-slate-200"
+                    ></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        onclick="closeSolucaoModal()"
+                        class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-sm"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        onclick="salvarSolucao()"
+                        class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg text-sm"
+                    >
+                        Concluir Chamado
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Confirmação de Exclusão -->
+        <div
+            id="modal-delete"
+            class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden justify-center items-center p-4 z-50"
+        >
+            <div
+                class="bg-slate-900 border border-slate-800 rounded-xl max-w-sm w-full p-6 space-y-4 text-center shadow-2xl"
+            >
+                <div
+                    class="w-12 h-12 bg-red-500/10 text-red-400 rounded-full flex items-center justify-center mx-auto border border-red-500/20"
+                >
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+                <h3 class="font-bold text-lg text-white">Excluir Chamado?</h3>
+                <p class="text-xs text-slate-400">
+                    Esta ação é irreversível e removerá o chamado
+                    permanentemente.
+                </p>
+                <input type="hidden" id="delete-chamado-id" />
+                <div class="flex justify-center gap-3 pt-2">
+                    <button
+                        type="button"
+                        onclick="closeDeleteModal()"
+                        class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-sm"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        onclick="confirmarDeletar()"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg text-sm"
+                    >
+                        Excluir
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let rawChamados = [];
+
+            // Verificar se está logado
+            async function checkAuth() {
+                const res = await fetch("/api/me");
+                const data = await res.json();
+                if (data.logged_in) {
+                    document
+                        .getElementById("login-overlay")
+                        .classList.add("hidden");
+                    document.getElementById("user-display").innerText =
+                        `Usuário: ${data.username}`;
+                    loadData();
+                } else {
+                    document
+                        .getElementById("login-overlay")
+                        .classList.remove("hidden");
+                }
+            }
+
+            // Login Form Submit
+            document
+                .getElementById("form-login")
+                .addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const username =
+                        document.getElementById("login-user").value;
+                    const password =
+                        document.getElementById("login-pass").value;
+                    const errorEl = document.getElementById("login-error");
+
+                    const res = await fetch("/api/login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ username, password }),
+                    });
+
+                    if (res.ok) {
+                        errorEl.classList.add("hidden");
+                        checkAuth();
+                    } else {
+                        const data = await res.json();
+                        errorEl.innerText =
+                            data.error || "Erro ao realizar login";
+                        errorEl.classList.remove("hidden");
+                    }
+                });
+
+            async function logout() {
+                await fetch("/api/logout", { method: "POST" });
+                checkAuth();
+            }
+
+            async function loadData() {
+                const res = await fetch("/api/chamados");
+                if (res.status === 401) {
+                    checkAuth();
+                    return;
+                }
+                rawChamados = await res.json();
+                render();
+            }
+
+            function render() {
+                const search = document
+                    .getElementById("search-input")
+                    .value.toLowerCase();
+                const cat = document.getElementById("filter-category").value;
+                const stat = document.getElementById("filter-status").value;
+
+                const filtered = rawChamados.filter((c) => {
+                    const matchesSearch =
+                        c.title.toLowerCase().includes(search) ||
+                        (c.requester &&
+                            c.requester.toLowerCase().includes(search)) ||
+                        String(c.id).includes(search);
+                    const matchesCat = !cat || c.category === cat;
+                    const matchesStat = !stat || c.status === stat;
+                    return matchesSearch && matchesCat && matchesStat;
+                });
+
+                // KPIs
+                document.getElementById("kpi-total").innerText =
+                    rawChamados.length;
+                document.getElementById("kpi-criticos").innerText =
+                    rawChamados.filter(
+                        (c) =>
+                            c.priority === "Critica" &&
+                            c.status !== "Concluído",
+                    ).length;
+                document.getElementById("kpi-andamento").innerText =
+                    rawChamados.filter(
+                        (c) => c.status === "Em Andamento",
+                    ).length;
+                document.getElementById("kpi-concluidos").innerText =
+                    rawChamados.filter((c) => c.status === "Concluído").length;
+
+                const cols = { Critica: [], Alta: [], Media: [], Baixa: [] };
+                filtered.forEach((c) => {
+                    if (cols[c.priority]) cols[c.priority].push(c);
+                });
+
+                ["Critica", "Alta", "Media", "Baixa"].forEach((p) => {
+                    document.getElementById(`count-${p}`).innerText =
+                        cols[p].length;
+                    const container = document.getElementById(`col-${p}`);
+
+                    container.innerHTML = cols[p]
+                        .map((c) => {
+                            let borderClass =
+                                "border-l-4 border-l-blue-500 border-slate-800 bg-slate-900/90";
+                            let statusBadge =
+                                "bg-blue-500/10 text-blue-400 border border-blue-500/20";
+
+                            if (c.status === "Em Andamento") {
+                                borderClass =
+                                    "border-l-4 border-l-amber-500 border-slate-800 bg-slate-900/90";
+                                statusBadge =
+                                    "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                            } else if (c.status === "Concluído") {
+                                borderClass =
+                                    "border-l-4 border-l-emerald-500 border-slate-800/60 bg-slate-950/40 opacity-70";
+                                statusBadge =
+                                    "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                            }
+
+                            if (c.status === "Concluído") {
+                                return `
+              <div class="border rounded-lg p-3 ${borderClass} space-y-2 hover:opacity-100 transition-opacity shadow-sm">
+                <div class="flex justify-between items-center gap-2">
+                  <div class="flex items-center gap-2 overflow-hidden">
+                    <span class="text-[10px] font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded flex-shrink-0">#${c.id}</span>
+                    <span class="text-xs font-semibold text-slate-300 truncate line-through">${c.title}</span>
+                  </div>
+                  <div class="flex gap-2 flex-shrink-0">
+                    <button onclick='openModal(${JSON.stringify(c)})' class="text-slate-500 hover:text-blue-400 text-xs"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="promptDelete(${c.id})" class="text-slate-500 hover:text-red-400 text-xs"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center text-[11px] pt-1">
+                  <span class="px-2 py-0.5 rounded ${statusBadge}"><i class="fa-solid fa-check mr-1"></i> Concluído</span>
+                  <select onchange="handleStatusChange(${c.id}, this.value)" class="bg-slate-950 border border-slate-800 rounded text-[11px] px-2 py-0.5 text-slate-300 focus:outline-none">
+                    <option value="Aberto">Reabrir</option>
+                    <option value="Em Andamento">Em Andamento</option>
+                    <option value="Concluído" selected>Concluído</option>
+                  </select>
+                </div>
+                ${c.solution ? `<div class="text-[11px] text-emerald-300/90 bg-emerald-950/30 p-2 rounded border border-emerald-500/10 mt-1"><strong class="font-semibold text-emerald-400">Solução:</strong> ${c.solution}</div>` : ""}
+              </div>
+            `;
+                            }
+
+                            return `
+            <div class="border rounded-lg p-4 ${borderClass} space-y-3 hover:bg-slate-900 transition-colors shadow-sm">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">#${c.id}</span>
+                  <span class="text-xs bg-slate-800 text-blue-400 font-semibold px-2 py-0.5 rounded border border-slate-700">${c.category}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick='openModal(${JSON.stringify(c)})' class="text-slate-500 hover:text-blue-400 text-xs"><i class="fa-solid fa-pen"></i></button>
+                  <button onclick="promptDelete(${c.id})" class="text-slate-500 hover:text-red-400 text-xs"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+              
+              <div>
+                <h4 class="text-sm font-semibold text-white leading-snug">${c.title}</h4>
+                ${c.description ? `<p class="text-xs text-slate-400 mt-1 line-clamp-2">${c.description}</p>` : ""}
+              </div>
+
+              <div class="text-xs text-slate-400 space-y-1 pt-1 border-t border-slate-800/60">
+                <p><i class="fa-regular fa-user text-slate-500 mr-1"></i> <strong class="text-slate-300">Solicitante:</strong> ${c.requester}</p>
+                <p><i class="fa-regular fa-id-badge text-slate-500 mr-1"></i> <strong class="text-slate-300">Técnico:</strong> ${c.assigned_to || "N/A"}</p>
+                <p><i class="fa-regular fa-clock text-slate-500 mr-1"></i> <strong class="text-slate-300">SLA:</strong> ${c.sla}</p>
+              </div>
+
+              <div class="pt-2 flex justify-between items-center gap-2">
+                <select onchange="handleStatusChange(${c.id}, this.value)" class="bg-slate-950 border border-slate-800 rounded text-xs px-2 py-1 text-slate-300 focus:outline-none">
+                  <option value="Aberto" ${c.status === "Aberto" ? "selected" : ""}>Aberto</option>
+                  <option value="Em Andamento" ${c.status === "Em Andamento" ? "selected" : ""}>Em Andamento</option>
+                  <option value="Concluído" ${c.status === "Concluído" ? "selected" : ""}>Concluído</option>
+                </select>
+
+                <select onchange="updatePriority(${c.id}, this.value)" class="bg-slate-950 border border-slate-800 rounded text-xs px-2 py-1 text-slate-300 focus:outline-none">
+                  <option value="Critica" ${c.priority === "Critica" ? "selected" : ""}>P1 - Crítica</option>
+                  <option value="Alta" ${c.priority === "Alta" ? "selected" : ""}>P2 - Alta</option>
+                  <option value="Media" ${c.priority === "Media" ? "selected" : ""}>P3 - Média</option>
+                  <option value="Baixa" ${c.priority === "Baixa" ? "selected" : ""}>P4 - Baixa</option>
+                </select>
+              </div>
+            </div>
+          `;
+                        })
+                        .join("");
+                });
+            }
+
+            function openModal(item = null) {
+                const modal = document.getElementById("modal-chamado");
+                const form = document.getElementById("form-chamado");
+
+                if (item) {
+                    document.getElementById("modal-title").innerText =
+                        `Editar Chamado #${item.id}`;
+                    document.getElementById("chamado-id").value = item.id;
+                    document.getElementById("title").value = item.title;
+                    document.getElementById("description").value =
+                        item.description || "";
+                    document.getElementById("requester").value = item.requester;
+                    document.getElementById("assigned_to").value =
+                        item.assigned_to || "";
+                    document.getElementById("category").value = item.category;
+                    document.getElementById("priority").value = item.priority;
+                    document.getElementById("sla").value = item.sla;
+                } else {
+                    document.getElementById("modal-title").innerText =
+                        "Novo Chamado de TI";
+                    form.reset();
+                    document.getElementById("chamado-id").value = "";
+                }
+
+                modal.classList.remove("hidden");
+                modal.classList.add("flex");
+            }
+
+            function closeModal() {
+                document
+                    .getElementById("modal-chamado")
+                    .classList.add("hidden");
+                document
+                    .getElementById("modal-chamado")
+                    .classList.remove("flex");
+            }
+
+            document
+                .getElementById("form-chamado")
+                .addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const id = document.getElementById("chamado-id").value;
+                    const payload = {
+                        title: document.getElementById("title").value,
+                        description:
+                            document.getElementById("description").value,
+                        requester: document.getElementById("requester").value,
+                        assigned_to:
+                            document.getElementById("assigned_to").value,
+                        category: document.getElementById("category").value,
+                        priority: document.getElementById("priority").value,
+                        sla: document.getElementById("sla").value,
+                    };
+
+                    const url = id ? `/api/chamados/${id}` : "/api/chamados";
+                    const method = id ? "PUT" : "POST";
+
+                    await fetch(url, {
+                        method: method,
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    });
+
+                    closeModal();
+                    loadData();
+                });
+
+            function openSolucaoModal(id) {
+                document.getElementById("solucao-chamado-id").value = id;
+                document.getElementById("solution-text").value = "";
+                document
+                    .getElementById("modal-solucao")
+                    .classList.remove("hidden");
+                document.getElementById("modal-solucao").classList.add("flex");
+            }
+
+            function closeSolucaoModal() {
+                document
+                    .getElementById("modal-solucao")
+                    .classList.add("hidden");
+                document
+                    .getElementById("modal-solucao")
+                    .classList.remove("flex");
+                loadData();
+            }
+
+            function handleStatusChange(id, status) {
+                if (status === "Concluído") {
+                    openSolucaoModal(id);
+                } else {
+                    updateStatus(id, status, "");
+                }
+            }
+
+            async function salvarSolucao() {
+                const id = document.getElementById("solucao-chamado-id").value;
+                const solution = document.getElementById("solution-text").value;
+                await updateStatus(id, "Concluído", solution);
+                closeSolucaoModal();
+            }
+
+            function promptDelete(id) {
+                document.getElementById("delete-chamado-id").value = id;
+                document
+                    .getElementById("modal-delete")
+                    .classList.remove("hidden");
+                document.getElementById("modal-delete").classList.add("flex");
+            }
+
+            function closeDeleteModal() {
+                document.getElementById("modal-delete").classList.add("hidden");
+                document
+                    .getElementById("modal-delete")
+                    .classList.remove("flex");
+            }
+
+            async function confirmarDeletar() {
+                const id = document.getElementById("delete-chamado-id").value;
+                await fetch(`/api/chamados/${id}`, { method: "DELETE" });
+                closeDeleteModal();
+                loadData();
+            }
+
+            async function updateStatus(id, status, solution) {
+                await fetch(`/api/chamados/${id}/status`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status, solution }),
+                });
+                loadData();
+            }
+
+            async function updatePriority(id, priority) {
+                await fetch(`/api/chamados/${id}/priority`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ priority }),
+                });
+                loadData();
+            }
+
+            // Inicialização ao carregar a página
+            checkAuth();
+        </script>
+    </body>
+</html>
